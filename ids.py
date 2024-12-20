@@ -3,7 +3,7 @@ import stat
 import time
 import json
 
-file_path = 'etc/shadow'
+file_path = '/etc/shadow'
 LOG_FILE = 'logs.json'
 
 # Get file status
