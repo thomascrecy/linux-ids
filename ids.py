@@ -1,118 +1,101 @@
 import os
-import stat
-import time
 import json
 import argparse
 import logging
 import hashlib
-import platform
-import subprocess
+import pwd
+import grp
+import time
 
-file_paths = ['/etc/shadow', '/etc/passwd', '/etc/group']
-# Log file path
-LOG_FILE = "ids.log"
-# Output file path
-OUTPUT_FILE = "/home/toto/conf.json"
+# Configuration par défaut
+CONFIG_PATH = "/etc/ids/config.json"
+LOG_PATH = "/var/log/ids/ids.log"
 
-# List to store file properties
-file_properties_list = []
+# Initialisation du logger
+def setup_logging():
+    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+    logging.basicConfig(
+        filename=LOG_PATH,
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S%z"
+    )
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    console.setFormatter(formatter)
+    logging.getLogger().addHandler(console)
 
-# Command-line argument parser
-parser = argparse.ArgumentParser(
-    description='Help document',
-    epilog="End of Help"
-)
-parser.add_argument('-v', '--version', action='version',
-                    version='%(prog)s 1.0')
-args = parser.parse_args()
-
-# Logging configuration
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-console.setFormatter(formatter)
-logging.getLogger().addHandler(console)
-
-# Function to compute file hashes
-def compute_hashes(file_path):
+# Lecture de la configuration
+def load_config(path):
     try:
-        hashes = {"MD5": None, "SHA256": None, "SHA512": None}
+        with open(path, "r") as config_file:
+            return json.load(config_file)
+    except FileNotFoundError:
+        logging.error(f"Fichier de configuration non trouvé : {path}")
+        return {}
+    except json.JSONDecodeError as e:
+        logging.error(f"Erreur de lecture du fichier de configuration : {e}")
+        return {}
+
+# Calcul des hachages des fichiers
+def compute_hashes(file_path):
+    hashes = {"MD5": None, "SHA256": None, "SHA512": None}
+    try:
         with open(file_path, "rb") as f:
             data = f.read()
             hashes["MD5"] = hashlib.md5(data).hexdigest()
             hashes["SHA256"] = hashlib.sha256(data).hexdigest()
             hashes["SHA512"] = hashlib.sha512(data).hexdigest()
-        return hashes
-    except (FileNotFoundError, PermissionError) as e:
-        logging.error(f"Error computing hashes for {file_path}: {e}")
-        return {"error": str(e)}
+    except Exception as e:
+        logging.error(f"Erreur de calcul des hachages pour {file_path}: {e}")
+    return hashes
 
-# Function to get file properties
+# Récupération des propriétés des fichiers
 def get_file_properties(file_path):
     try:
         stats = os.stat(file_path)
-        properties = {
+        return {
             "path": file_path,
             "size": stats.st_size,
             "last_modified": time.ctime(stats.st_mtime),
             "created": time.ctime(stats.st_ctime),
-            "owner": get_owner(file_path),
-            "group": get_group(file_path),
+            "owner": pwd.getpwuid(stats.st_uid).pw_name,
+            "group": grp.getgrgid(stats.st_gid).gr_name,
+            **compute_hashes(file_path)
         }
-        properties.update(compute_hashes(file_path))
-        logging.info(f"Properties retrieved for {file_path}")
-        return properties
-    except (FileNotFoundError, PermissionError) as e:
-        logging.error(f"Error retrieving properties for {file_path}: {e}")
-        return {"error": str(e)}
-
-# Function to get file owner
-def get_owner(file_path):
-    import pwd
-    return pwd.getpwuid(os.stat(file_path).st_uid).pw_name
-
-# Function to get file group
-def get_group(file_path):
-    import grp
-    return grp.getgrgid(os.stat(file_path).st_gid).gr_name
-
-# Function to get open TCP/UDP ports
-def get_open_ports():
-    try:
-        result = subprocess.check_output(["ss", "-tuln"], text=True)
-        logging.info("Open ports retrieved successfully")
-        return result.strip().split("\n")
     except Exception as e:
-        logging.error(f"Error retrieving open ports: {e}")
-        return {"error": str(e)}
+        logging.error(f"Erreur de récupération des propriétés pour {file_path}: {e}")
+        return {}
 
-# Main function to generate report
-def generate_report():
-    logging.info("Starting report generation")
-    report = {
-        "build_time": time.ctime(),
-        "files": [],
-        "open_ports": get_open_ports(),
-    }
-
-    for file_path in file_paths:
+# Génération du rapport
+def generate_report(config):
+    report = {"files": []}
+    for file_path in config.get("file_paths", []):
         report["files"].append(get_file_properties(file_path))
+    return report
 
-    # Save report to JSON file
+# Écriture du rapport dans un fichier JSON
+def save_report(report, output_path):
     try:
-        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-        with open(OUTPUT_FILE, "w") as json_file:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, "w") as json_file:
             json.dump(report, json_file, indent=4)
-        logging.info(f"Report saved to {OUTPUT_FILE}")
+        logging.info(f"Rapport sauvegardé dans {output_path}")
     except Exception as e:
-        logging.error(f"Error saving report: {e}")
+        logging.error(f"Erreur de sauvegarde du rapport : {e}")
 
-# Execution
+# Point d'entrée principal
+def main():
+    setup_logging()
+    parser = argparse.ArgumentParser(description="Outil de surveillance des fichiers.")
+    parser.add_argument("--config", help="Chemin vers le fichier de configuration", default=CONFIG_PATH)
+    parser.add_argument("--output", help="Chemin du fichier de sortie", required=True)
+    args = parser.parse_args()
+
+    config = load_config(args.config)
+    report = generate_report(config)
+    save_report(report, args.output)
+
 if __name__ == "__main__":
-    generate_report()
+    main()
