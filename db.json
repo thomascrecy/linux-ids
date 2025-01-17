@@ -1,0 +1,45 @@
+{
+    "build_time": "Fri Jan 17 11:52:22 2025",
+    "files": [
+        {
+            "path": "/etc/shadow",
+            "size": 728,
+            "last_modified": "Mon Jan 13 09:31:08 2025",
+            "created": "Mon Jan 13 09:31:08 2025",
+            "owner": "root",
+            "group": "root",
+            "MD5": "73b5e510895f067bf9bb6f2c69ce88cb",
+            "SHA256": "93876680e51cce9617225b66f5ac9c6b318e6233be3f6c3938a6e261dd658caa",
+            "SHA512": "0e1cb1c000e910b1fce7de09ad69b35e9b8dcd3a2a37d51da98c74cd70911c77a6e9e36845879855785000a914e235548824f3ead7ad6a4808d77d7bf7e7eae8"
+        },
+        {
+            "path": "/etc/passwd",
+            "size": 968,
+            "last_modified": "Mon Jan 13 09:31:08 2025",
+            "created": "Mon Jan 13 09:31:08 2025",
+            "owner": "root",
+            "group": "root",
+            "MD5": "b7f2c232ea1905350655df7930ed3bfd",
+            "SHA256": "ccc4dedb669a22119ff8215b36e0b86631989aca4dfa72978302135b807f0c5e",
+            "SHA512": "c42065acd6f028018e47ff48284ecbeedfb6b39fbb87fbfe3809c00893d28cffc652e8b1a1f7d4b473e1d218e0b98b8cf15213dfc23e1cf2dd8a7286f5cc1b8e"
+        },
+        {
+            "path": "/etc/group",
+            "size": 490,
+            "last_modified": "Mon Jan 13 09:31:08 2025",
+            "created": "Mon Jan 13 09:31:08 2025",
+            "owner": "root",
+            "group": "root",
+            "MD5": "28da75e15bd4a0b998dfad306ab02749",
+            "SHA256": "3c6c2750e6306dd71fe2ab880a2c21cf57122f0dff4e3d4127b9506ee584d374",
+            "SHA512": "d0a806c406a635fcf33bc937db5cca2559d2e9f5723552a59f8bb7053b949f2d50b2395bfa1cab9d8e67a0efa0a563392ee926540601b41cae5e99645463ef52"
+        }
+    ],
+    "open_ports": [
+        "Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess",
+        "udp   UNCONN 0      0          127.0.0.1:323       0.0.0.0:*          ",
+        "udp   UNCONN 0      0              [::1]:323          [::]:*          ",
+        "tcp   LISTEN 0      128          0.0.0.0:22        0.0.0.0:*          ",
+        "tcp   LISTEN 0      128             [::]:22           [::]:*"
+    ]
+}
