@@ -9,23 +9,23 @@ import platform
 import subprocess
 
 file_paths = ['/etc/shadow', '/etc/passwd', '/etc/group']
-OUTPUT_FILE = "/var/ids/db.json"  # Updated to db.json for storing the state
+OUTPUT_FILE = "/var/ids/db.json"
 LOG_FILE = "/var/log/ids/ids.log"
 
-# List to store file properties
+# Liste pour stocker les propriétés des fichiers
 file_properties_list = []
 
-# Command-line argument parser
+# Parseur d'arguments en ligne de commande
 parser = argparse.ArgumentParser(
-    description='Help document',
-    epilog="End of Help"
+    description='Document d\'aide',
+    epilog="Fin de l'aide"
 )
 parser.add_argument('-v', '--version', action='version',
                     version='%(prog)s 1.0')
-parser.add_argument('command', choices=['build', 'check'], help="Command to run", nargs='?')
+parser.add_argument('command', choices=['build', 'check'], help="Commande à exécuter", nargs='?')
 args = parser.parse_args()
 
-# Logging configuration
+# Configuration des logs
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.DEBUG,
@@ -38,7 +38,7 @@ formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 console.setFormatter(formatter)
 logging.getLogger().addHandler(console)
 
-# Function to compute file hashes
+# Fonction pour calculer les hachages des fichiers
 def compute_hashes(file_path):
     try:
         hashes = {"MD5": None, "SHA256": None, "SHA512": None}
@@ -49,10 +49,10 @@ def compute_hashes(file_path):
             hashes["SHA512"] = hashlib.sha512(data).hexdigest()
         return hashes
     except (FileNotFoundError, PermissionError) as e:
-        logging.error(f"Error computing hashes for {file_path}: {e}")
+        logging.error(f"Erreur lors du calcul des hachages pour {file_path}: {e}")
         return {"error": str(e)}
 
-# Function to get file properties
+# Fonction pour obtenir les propriétés d'un fichier
 def get_file_properties(file_path):
     try:
         stats = os.stat(file_path)
@@ -65,35 +65,35 @@ def get_file_properties(file_path):
             "group": get_group(file_path),
         }
         properties.update(compute_hashes(file_path))
-        logging.info(f"Properties retrieved for {file_path}")
+        logging.info(f"Propriétés récupérées pour {file_path}")
         return properties
     except (FileNotFoundError, PermissionError) as e:
-        logging.error(f"Error retrieving properties for {file_path}: {e}")
+        logging.error(f"Erreur lors de la récupération des propriétés pour {file_path}: {e}")
         return {"error": str(e)}
 
-# Function to get file owner
+# Fonction pour obtenir le propriétaire du fichier
 def get_owner(file_path):
     import pwd
     return pwd.getpwuid(os.stat(file_path).st_uid).pw_name
 
-# Function to get file group
+# Fonction pour obtenir le groupe du fichier
 def get_group(file_path):
     import grp
     return grp.getgrgid(os.stat(file_path).st_gid).gr_name
 
-# Function to get open TCP/UDP ports
+# Fonction pour obtenir les ports TCP/UDP ouverts
 def get_open_ports():
     try:
         result = subprocess.check_output(["ss", "-tuln"], text=True)
-        logging.info("Open ports retrieved successfully")
+        logging.info("Ports ouverts récupérés avec succès")
         return result.strip().split("\n")
     except Exception as e:
-        logging.error(f"Error retrieving open ports: {e}")
+        logging.error(f"Erreur lors de la récupération des ports ouverts: {e}")
         return {"error": str(e)}
 
-# Function to generate and save the current state (build command)
+# Fonction pour générer et sauvegarder l'état actuel (commande build)
 def generate_report():
-    logging.info("Starting report generation")
+    logging.info("Démarrage de la génération du rapport")
     report = {
         "build_time": time.ctime(),
         "files": [],
@@ -103,25 +103,25 @@ def generate_report():
     for file_path in file_paths:
         report["files"].append(get_file_properties(file_path))
 
-    # Save report to JSON file
+    # Sauvegarder le rapport dans un fichier JSON
     try:
         os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
         with open(OUTPUT_FILE, "w") as json_file:
             json.dump(report, json_file, indent=4)
-        logging.info(f"Report saved to {OUTPUT_FILE}")
+        logging.info(f"Rapport sauvegardé dans {OUTPUT_FILE}")
     except Exception as e:
-        logging.error(f"Error saving report: {e}")
+        logging.error(f"Erreur lors de la sauvegarde du rapport: {e}")
 
-# Function to check if the state has changed (check command)
+# Fonction pour vérifier si l'état a changé (commande check)
 def check_state():
     try:
         with open(OUTPUT_FILE, "r") as json_file:
             stored_state = json.load(json_file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        logging.error(f"Error loading stored state: {e}")
+        logging.error(f"Erreur lors du chargement de l'état sauvegardé: {e}")
         return {"state": "divergent", "error": str(e)}
 
-    # Current state generation
+    # Génération de l'état actuel
     current_report = {
         "build_time": time.ctime(),
         "files": [],
@@ -131,19 +131,19 @@ def check_state():
     for file_path in file_paths:
         current_report["files"].append(get_file_properties(file_path))
 
-    # Compare states
+    # Comparaison des états
     if current_report == stored_state:
         return {"state": "ok"}
     else:
         return {"state": "divergent", "changes": current_report}
 
-# Execution
+# Exécution du script
 if __name__ == "__main__":
     if args.command == 'build':
         generate_report()
     elif args.command == 'check':
         result = check_state()
-        print(json.dumps(result, indent=4))
+        print(json.dumps(result, indent=4, ensure_ascii=False))
     else:
         print("Usage: python ids.py [build|check]")
-        print("Please specify a valid command.")
+        print("Veuillez spécifier une commande valide.")

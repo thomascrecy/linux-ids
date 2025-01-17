@@ -15,3 +15,11 @@ Ce script python est un outil de surveillance pour suivre l'état des fichiers, 
    ```bash
    git clone https://github.com/thomascrecy/linux-ids
    cd linux-ids
+
+2. Lancer le programme :
+    ```bash
+    python ids.py build
+
+3. Vérifier si les fichiers ont changés :
+    ```bash
+    python ids.py check
