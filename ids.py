@@ -9,7 +9,7 @@ import platform
 import subprocess
 
 file_paths = ['/etc/shadow', '/etc/passwd', '/etc/group']
-OUTPUT_FILE = "/etc/ids/config.json"
+OUTPUT_FILE = "/var/ids/db.json"  # Updated to db.json for storing the state
 LOG_FILE = "/var/log/ids/ids.log"
 
 # List to store file properties
@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-v', '--version', action='version',
                     version='%(prog)s 1.0')
+parser.add_argument('command', choices=['build', 'check'], help="Command to run", nargs='?')
 args = parser.parse_args()
 
 # Logging configuration
@@ -90,7 +91,7 @@ def get_open_ports():
         logging.error(f"Error retrieving open ports: {e}")
         return {"error": str(e)}
 
-# Main function to generate report
+# Function to generate and save the current state (build command)
 def generate_report():
     logging.info("Starting report generation")
     report = {
@@ -111,6 +112,38 @@ def generate_report():
     except Exception as e:
         logging.error(f"Error saving report: {e}")
 
+# Function to check if the state has changed (check command)
+def check_state():
+    try:
+        with open(OUTPUT_FILE, "r") as json_file:
+            stored_state = json.load(json_file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logging.error(f"Error loading stored state: {e}")
+        return {"state": "divergent", "error": str(e)}
+
+    # Current state generation
+    current_report = {
+        "build_time": time.ctime(),
+        "files": [],
+        "open_ports": get_open_ports(),
+    }
+
+    for file_path in file_paths:
+        current_report["files"].append(get_file_properties(file_path))
+
+    # Compare states
+    if current_report == stored_state:
+        return {"state": "ok"}
+    else:
+        return {"state": "divergent", "changes": current_report}
+
 # Execution
 if __name__ == "__main__":
-    generate_report()
+    if args.command == 'build':
+        generate_report()
+    elif args.command == 'check':
+        result = check_state()
+        print(json.dumps(result, indent=4))
+    else:
+        print("Usage: python ids.py [build|check]")
+        print("Please specify a valid command.")
