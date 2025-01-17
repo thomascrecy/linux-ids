@@ -17,16 +17,13 @@ OUTPUT_FILE = "/home/toto/conf.json"
 # List to store file properties
 file_properties_list = []
 
-
 # Command-line argument parser
 parser = argparse.ArgumentParser(
     description='Help document',
     epilog="End of Help"
 )
 parser.add_argument('-v', '--version', action='version',
-                    version='%(prog)s 1.0', help="Show program's version number and exit.")
-parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                    help='Show this help message and exit.')
+                    version='%(prog)s 1.0')
 args = parser.parse_args()
 
 # Logging configuration
@@ -119,4 +116,3 @@ def generate_report():
 # Execution
 if __name__ == "__main__":
     generate_report()
-
