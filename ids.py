@@ -90,7 +90,6 @@ def main():
     setup_logging()
     parser = argparse.ArgumentParser(description="Outil de surveillance des fichiers.")
     parser.add_argument("--config", help="Chemin vers le fichier de configuration", default=CONFIG_PATH)
-    parser.add_argument("--output", help="Chemin du fichier de sortie", required=True)
     args = parser.parse_args()
 
     config = load_config(args.config)
