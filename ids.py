@@ -9,8 +9,8 @@ import platform
 import subprocess
 
 file_paths = ['/etc/shadow', '/etc/passwd', '/etc/group']
-CONFIG_PATH = "/etc/ids/config.json"
-LOG_PATH = "/var/log/ids/ids.log"
+OUTPUT_FILE = "/etc/ids/config.json"
+LOG_FILE = "/var/log/ids/ids.log"
 
 # List to store file properties
 file_properties_list = []
